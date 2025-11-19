@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カラーアスキーアート変換ツール</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        
+        .input-section, .output-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #fdbb2d;
+        }
+        
+        .upload-area {
+            border: 3px dashed #fdbb2d;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            background-color: rgba(253, 187, 45, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        .range-value {
+            display: inline-block;
+            width: 40px;
+            text-align: right;
+        }
+        
+        button {
+            background: linear-gradient(to right, #fdbb2d, #b21f1f);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .output-area {
+            background-color: #000;
+            border-radius: 10px;
+            padding: 20px;
+            overflow: auto;
+            max-height: 500px;
+            font-family: monospace;
+            line-height: 1;
+            white-space: pre;
+            margin-bottom: 20px;
+            border: 2px solid #333;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .preview-area {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        #previewImage {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .input-section, .output-section {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>カラーアスキーアート変換ツール</h1>
+            <p class="subtitle">画像をアップロードしてカラーアスキーアートに変換しよう</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="input-section">
+                <h2 class="section-title">画像入力</h2>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <p>画像をクリックして選択、またはドラッグ＆ドロップ</p>
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                </div>
+                
+                <div class="preview-area">
+                    <img id="previewImage" src="" alt="プレビュー" style="display: none;">
+                </div>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="widthRange">AAの幅: <span id="widthValue" class="range-value">40</span> 文字</label>
+                        <input type="range" id="widthRange" min="10" max="100" value="40">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="charSet">文字セット:</label>
+                        <select id="charSet">
+                            <option value="default">標準 (@%#*+=-:. )</option>
+                            <option value="dense">高密度 (█▓▒░ )</option>
+                            <option value="simple">シンプル (@#=+-. )</option>
+                            <option value="blocks">ブロック (█▄▀ )</option>
+                        </select>
+                    </div>
+                    
+                    <button id="convertBtn">アスキーアートに変換</button>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <h2 class="section-title">アスキーアート出力</h2>
+                
+                <div class="output-area" id="outputArea">
+                    変換されたアスキーアートがここに表示されます
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="copyBtn">AAをコピー</button>
+                    <button id="downloadBtn">AAを画像保存</button>
+                    <button id="clearBtn">クリア</button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 カラーアスキーアート変換ツール</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageInput = document.getElementById('imageInput');
+            const uploadArea = document.getElementById('uploadArea');
+            const previewImage = document.getElementById('previewImage');
+            const widthRange = document.getElementById('widthRange');
+            const widthValue = document.getElementById('widthValue');
+            const charSet = document.getElementById('charSet');
+            const convertBtn = document.getElementById('convertBtn');
+            const outputArea = document.getElementById('outputArea');
+            const copyBtn = document.getElementById('copyBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            
+            let currentImage = null;
+            
+            // ファイルアップロードの処理
+            uploadArea.addEventListener('click', () => imageInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = 'rgba(253, 187, 45, 0.2)';
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.backgroundColor = '';
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = '';
+                
+                if (e.dataTransfer.files.length) {
+                    imageInput.files = e.dataTransfer.files;
+                    handleImageUpload(e.dataTransfer.files[0]);
+                }
+            });
+            
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleImageUpload(e.target.files[0]);
+                }
+            });
+            
+            // 画像アップロード処理
+            function handleImageUpload(file) {
+                if (!file.type.match('image.*')) {
+                    alert('画像ファイルを選択してください');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                    currentImage = new Image();
+                    currentImage.src = e.target.result;
+                };
+                
+                reader.readAsDataURL(file);
+            }
+            
+            // 幅スライダーの更新
+            widthRange.addEventListener('input', () => {
+                widthValue.textContent = widthRange.value;
+            });
+            
+            // 変換ボタンの処理
+            convertBtn.addEventListener('click', () => {
+                if (!currentImage) {
+                    alert('画像をアップロードしてください');
+                    return;
+                }
+                
+                convertToAsciiArt();
+            });
+            
+            // アスキーアート変換関数
+            function convertToAsciiArt() {
+                const width = parseInt(widthRange.value);
+                const charSetValue = charSet.value;
+                
+                let chars;
+                switch(charSetValue) {
+                    case 'dense':
+                        chars = ['█', '▓', '▒', '░', ' '];
+                        break;
+                    case 'simple':
+                        chars = ['@', '#', '=', '+', '-', '.', ' '];
+                        break;
+                    case 'blocks':
+                        chars = ['█', '▄', '▀', ' '];
+                        break;
+                    default:
+                        chars = ['@', '%', '#', '*', '+', '=', '-', ':', '.', ' '];
+                }
+                
+                // キャンバスを作成して画像を描画
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // アスキーアートの幅に合わせて高さを計算
+                const aspectRatio = currentImage.height / currentImage.width;
+                const height = Math.floor(width * aspectRatio * 0.5); // 文字の縦横比を考慮
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // 画像をキャンバスに描画
+                ctx.drawImage(currentImage, 0, 0, width, height);
+                
+                // ピクセルデータを取得
+                const imageData = ctx.getImageData(0, 0, width, height);
+                const data = imageData.data;
+                
+                // アスキーアートを生成
+                let asciiArt = '';
+                
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const index = (y * width + x) * 4;
+                        const r = data[index];
+                        const g = data[index + 1];
+                        const b = data[index + 2];
+                        const a = data[index + 3];
+                        
+                        // 透明度が低い場合は空白
+                        if (a < 128) {
+                            asciiArt += ' ';
+                            continue;
+                        }
+                        
+                        // 輝度を計算
+                        const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                        
+                        // 輝度に基づいて文字を選択
+                        const charIndex = Math.floor(brightness * (chars.length - 1));
+                        const char = chars[charIndex];
+                        
+                        // カラーコードを追加
+                        asciiArt += `<span style="color: rgb(${r}, ${g}, ${b})">${char}</span>`;
+                    }
+                    asciiArt += '\n';
+                }
+                
+                // 結果を表示
+                outputArea.innerHTML = asciiArt;
+            }
+            
+            // コピーボタンの処理
+            copyBtn.addEventListener('click', () => {
+                // HTMLタグを除去したテキストを取得
+                const text = outputArea.textContent || outputArea.innerText;
+                
+                if (!text || text === '変換されたアスキーアートがここに表示されます') {
+                    alert('変換するアスキーアートがありません');
+                    return;
+                }
+                
+                // クリップボードにコピー
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('アスキーアートをクリップボードにコピーしました');
+                }).catch(err => {
+                    console.error('コピーに失敗しました:', err);
+                    alert('コピーに失敗しました');
+                });
+            });
+            
+            // ダウンロードボタンの処理
+            downloadBtn.addEventListener('click', () => {
+                if (!outputArea.innerHTML || outputArea.innerHTML === '変換されたアスキーアートがここに表示されます') {
+                    alert('変換するアスキーアートがありません');
+                    return;
+                }
+                
+                // アスキーアートを画像として保存
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // キャンバスサイズを設定
+                const fontSize = 12;
+                const lines = outputArea.textContent.split('\n');
+                const lineHeight = fontSize * 1.2;
+                
+                // テキストの幅と高さを計算
+                ctx.font = `${fontSize}px monospace`;
+                const maxWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+                const height = lines.length * lineHeight;
+                
+                canvas.width = maxWidth + 20;
+                canvas.height = height + 20;
+                
+                // 背景を黒に設定
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // テキストを描画
+                ctx.font = `${fontSize}px monospace`;
+                ctx.textBaseline = 'top';
+                
+                // 元のHTMLから色情報を抽出して描画
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = outputArea.innerHTML;
+                const spans = tempDiv.querySelectorAll('span');
+                
+                let currentLine = 0;
+                let currentChar = 0;
+                
+                for (let i = 0; i < spans.length; i++) {
+                    const span = spans[i];
+                    const color = span.style.color;
+                    const text = span.textContent;
+                    
+                    // 改行を処理
+                    if (text === '\n') {
+                        currentLine++;
+                        currentChar = 0;
+                        continue;
+                    }
+                    
+                    // 色を設定
+                    ctx.fillStyle = color || 'white';
+                    
+                    // 文字を描画
+                    for (let j = 0; j < text.length; j++) {
+                        const char = text[j];
+                        ctx.fillText(char, 10 + currentChar * fontSize * 0.6, 10 + currentLine * lineHeight);
+                        currentChar++;
+                    }
+                }
+                
+                // 画像としてダウンロード
+                const link = document.createElement('a');
+                link.download = 'ascii-art.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+            
+            // クリアボタンの処理
+            clearBtn.addEventListener('click', () => {
+                outputArea.innerHTML = '変換されたアスキーアートがここに表示されます';
+                previewImage.style.display = 'none';
+                currentImage = null;
+                imageInput.value = '';
+            });
+        });
+    </script>
+</body>
+</html>
